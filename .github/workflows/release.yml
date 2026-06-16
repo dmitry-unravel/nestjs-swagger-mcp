@@ -1,0 +1,39 @@
+name: Release
+on:
+  push:
+    branches: [ main ]
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release:
+    name: Publish npm (packages/adapter) via semantic-release
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/adapter
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org' # writes .npmrc and uses NODE_AUTH_TOKEN
+
+      # Install deps just for the adapter package (no need for full monorepo install)
+      - run: npm ci
+
+      # Build your package (creates dist/*)
+      - run: npm run build
+
+      # semantic-release will:
+      # 1) read commit messages since last release
+      # 2) bump version (semver)
+      # 3) publish to npm (using NODE_AUTH_TOKEN)
+      # 4) create GitHub release notes
+      - run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # auto-provided by GitHub; needed for GH releases/tags
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}  # your npm token with publish rights
