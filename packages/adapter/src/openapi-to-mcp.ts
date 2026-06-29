@@ -48,7 +48,7 @@ export function openApiToMcpTools(
 ): McpToolDef[] {
   const { includeTags, includeMethods, forwardHeaders = ['authorization'], filter } = opts;
   const tools: McpToolDef[] = [];
-  const METHODS = ['get', 'post', 'put', 'patch', 'delete'] as const;
+  const METHODS = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace'] as const;
 
   for (const [rawPath, item] of Object.entries(doc.paths ?? {})) {
     for (const m of METHODS) {
