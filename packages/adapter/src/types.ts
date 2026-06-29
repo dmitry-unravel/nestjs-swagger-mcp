@@ -30,7 +30,7 @@ export type McpToolDef = {
   handler: (args: Record<string, unknown>, ctx: McpHandlerContext) => Promise<McpToolResult>;
 };
 
-export type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';
+export type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete' | 'head' | 'options' | 'trace';
 
 export type RouteInfo = {
   path: string;

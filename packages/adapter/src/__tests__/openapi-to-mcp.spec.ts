@@ -236,6 +236,35 @@ describe('openApiToMcpTools', () => {
       );
     });
 
+    it('includes every OpenAPI operation method', () => {
+      const tools = openApiToMcpTools(
+        doc({
+          '/resource': {
+            get: { responses: {} },
+            post: { responses: {} },
+            put: { responses: {} },
+            patch: { responses: {} },
+            delete: { responses: {} },
+            head: { responses: {} },
+            options: { responses: {} },
+            trace: { responses: {} },
+          },
+        }),
+        'http://base',
+      );
+
+      expect(tools.map((tool) => tool.name)).toEqual([
+        'http.get.resource',
+        'http.post.resource',
+        'http.put.resource',
+        'http.patch.resource',
+        'http.delete.resource',
+        'http.head.resource',
+        'http.options.resource',
+        'http.trace.resource',
+      ]);
+    });
+
     it('filter predicate receives correct RouteInfo', () => {
       const seen: string[] = [];
       openApiToMcpTools(multiDoc, 'http://base', {
@@ -494,7 +523,16 @@ describe('openApiToMcpTools', () => {
     });
 
     it('uses correct HTTP method on fetch', async () => {
-      for (const method of ['get', 'post', 'put', 'patch', 'delete'] as const) {
+      for (const method of [
+        'get',
+        'post',
+        'put',
+        'patch',
+        'delete',
+        'head',
+        'options',
+        'trace',
+      ] as const) {
         fetchMock.mockResolvedValue({
           ok: true,
           status: 200,
