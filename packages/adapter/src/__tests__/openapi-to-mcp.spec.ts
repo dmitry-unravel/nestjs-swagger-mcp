@@ -450,6 +450,69 @@ describe('openApiToMcpTools', () => {
       expect(headers['Content-Type']).toBe('application/json');
     });
 
+    it('maps an API-key protected OpenAPI search operation', async () => {
+      mockResponse({ ok: true });
+      const [tool] = openApiToMcpTools(
+        {
+          openapi: '3.0.0',
+          info: { title: 'Xquik API', version: '1.0' },
+          paths: {
+            '/api/v1/x/tweets/search': {
+              get: {
+                tags: ['X'],
+                operationId: 'searchTweets',
+                summary: 'Search X posts',
+                security: [{ apiKey: [] }],
+                parameters: [
+                  { name: 'q', in: 'query', required: true, schema: { type: 'string' } },
+                  {
+                    name: 'queryType',
+                    in: 'query',
+                    schema: { type: 'string', enum: ['Latest', 'Top'], default: 'Latest' },
+                  },
+                  {
+                    name: 'limit',
+                    in: 'query',
+                    schema: { type: 'integer', minimum: 1, maximum: 200, default: 20 },
+                  },
+                ],
+                responses: { '200': { description: 'Search results' } },
+              },
+            },
+          },
+          components: {
+            securitySchemes: {
+              apiKey: { type: 'apiKey', in: 'header', name: 'x-api-key' },
+            },
+          },
+        } as OpenAPIObject,
+        'https://xquik.com',
+        { forwardHeaders: ['x-api-key'] },
+      );
+
+      expect(tool.name).toBe('X.searchTweets');
+      expect(tool.description).toBe('Search X posts');
+      expect(tool.inputSchema.properties.q).toMatchObject({
+        type: 'string',
+        'x-in': 'query',
+      });
+      expect(tool.inputSchema.required).toContain('q');
+      expect(tool.inputSchema.properties.queryType.enum).toEqual(['Latest', 'Top']);
+      expect(tool.inputSchema.properties.limit.maximum).toBe(200);
+
+      await tool.handler(
+        { q: 'openai', queryType: 'Latest', limit: 20 },
+        { headers: { 'x-api-key': 'test-key' } },
+      );
+      const url = fetchMock.mock.calls[0][0] as string;
+      const headers = fetchMock.mock.calls[0][1]?.headers as Record<string, string>;
+      expect(url).toContain('https://xquik.com/api/v1/x/tweets/search?');
+      expect(url).toContain('q=openai');
+      expect(url).toContain('queryType=Latest');
+      expect(url).toContain('limit=20');
+      expect(headers['x-api-key']).toBe('test-key');
+    });
+
     it('returns pretty-printed JSON text for object response', async () => {
       const payload = { foo: 'bar', n: 1 };
       mockResponse(payload);
